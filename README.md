@@ -275,4 +275,4 @@ Built on top of [Manim Community](https://www.manim.community/), [manim-slides](
 
 ## License
 
-MIT © 2025 [Fu-Yun Wang](https://g-u-n.github.io/)
+MIT © 2026 [Fu-Yun Wang](https://g-u-n.github.io/)
