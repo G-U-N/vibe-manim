@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theoretical Analysis of Rectified Diffusion — Fu-Yun Wang</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <!-- markdown-it -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --text-primary: #1e1b4b;
+            --text-secondary: #64748b;
+            --bg-page: #f8f7f4;
+            --bg-card: #ffffff;
+            --border-color: #e8e6df;
+            --shadow-md: 0 4px 12px rgba(30, 27, 75, 0.06);
+            --shadow-lg: 0 8px 24px rgba(30, 27, 75, 0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f8f7f4 0%, #eef2ff 50%, #faf5ff 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+        /* Header */
+        .blog-header {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .blog-header .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .blog-header .back-link:hover { text-decoration: underline; }
+        .blog-header h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.2rem;
+            line-height: 1.3;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        .blog-meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .blog-meta a { color: var(--primary-color); text-decoration: none; }
+        .blog-meta a:hover { text-decoration: underline; }
+        /* Content */
+        .blog-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 48px 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+        .blog-content h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.6rem;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .blog-content h2:first-child { margin-top: 0; }
+        .blog-content h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 36px;
+            margin-bottom: 12px;
+            color: var(--primary-dark);
+        }
+        .blog-content h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-top: 28px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        .blog-content p {
+            margin-bottom: 14px;
+        }
+        .blog-content ul, .blog-content ol {
+            margin-bottom: 14px;
+            padding-left: 24px;
+        }
+        .blog-content li { margin-bottom: 6px; }
+        .blog-content strong { font-weight: 600; }
+        .blog-content blockquote {
+            background: linear-gradient(135deg, #eef2ff, #faf5ff);
+            border-left: 4px solid var(--primary-color);
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
+        }
+        .blog-content blockquote p { margin-bottom: 8px; }
+        .blog-content blockquote p:last-child { margin-bottom: 0; }
+        /* Math display blocks */
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 0;
+            margin: 16px 0;
+        }
+        .katex-display > .katex {
+            max-width: 100%;
+        }
+        .katex { font-size: 1.05em; }
+        /* References */
+        .blog-content h2:last-of-type ~ p {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+        }
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container { padding: 24px 16px 60px; }
+            .blog-content { padding: 28px 20px; }
+            .blog-header h1 { font-size: 1.6rem; }
+            .katex-display { font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="blog-header">
+            <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to homepage</a>
+            <h1>Theoretical Analysis of Rectified Diffusion</h1>
+            <div class="blog-meta">
+                <a href="../index.html">Fu-Yun Wang</a> &middot; 2025
+                &middot; Companion note for <a href="https://arxiv.org/abs/2410.07303" target="_blank">Rectified Diffusion (ICLR 2025)</a>
+            </div>
+        </div>
+        <div class="blog-content" id="blog-content">
+            Loading...
+        </div>
+    </div>
+
+    <script>
+    // The full proof content embedded as a JS string.
+    // We use markdown-it to render it, then KaTeX auto-render for math.
+    const markdownSource = `
+## Introduction and Motivation
+
+Rectified Flow [3] proves that the coupling generated from ODE solutions yields non-increasing convex transport costs, and that recursive rectification straightens the flow paths at a $O(1/K)$ rate. However, these results are established exclusively for the linear interpolation form $\\mathbf x_t = t \\mathbf x_1 + (1-t) \\mathbf x_0$.
+
+In this note, we show that **these results extend to arbitrary diffusion forms** $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon$, encompassing variance-preserving (VP), variance-exploding (VE), and other common diffusion schedules. Our strategy is as follows:
+
+1. We first derive the PF-ODE for the general diffusion form (Preliminary).
+2. We then establish three key equivalence results (Theorems 1–3) showing that an arbitrary rescaling $\\mathbf y_t = k(t) \\mathbf x_t$ preserves posterior distributions, score functions (up to scaling), and PF-ODE generated data-noise pairs.
+3. Using these equivalence results, we show that any general diffusion form can reduce convex transport costs through rectification (Theorem 4), and we establish the straightening effect (Theorem 5) and the $O(1/K)$ convergence rate (Theorem 6) — the analogs of Theorems 3.5, 3.6, and 3.7 in [3].
+
+## Notation and Setup
+
+Throughout this note, we adopt the following notation:
+- $\\mathbf x_0 \\sim \\pi_0$ is the data sample, and $\\boldsymbol \\epsilon \\sim \\mathcal N(\\mathbf 0, \\mathbf I)$ is the standard Gaussian noise.
+- The general diffusion form is $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon$ for $t \\in [0, 1]$, where $\\alpha_0 = 1$, $\\sigma_0 = 0$, and $\\frac{\\alpha_t}{\\sigma_t}$ (the signal-to-noise ratio) is a strictly monotonically decreasing function of $t$ [1].
+- $\\dot{\\alpha}_t$ and $\\dot{\\sigma}_t$ denote the time derivatives of $\\alpha_t$ and $\\sigma_t$.
+- $\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t)$ denotes the score function.
+- $\\boldsymbol v_t(\\mathbf x_t, t)$ denotes the velocity field of the PF-ODE.
+- For a coupling $(\\mathbf x_0, \\boldsymbol \\epsilon)$, the **rectification** procedure generates a new coupling $(\\mathbf z_0, \\boldsymbol \\epsilon_{\\mathbf z})$ by solving the PF-ODE from $\\boldsymbol \\epsilon_{\\mathbf z}$ to obtain $\\mathbf z_0$, where the PF-ODE is trained on the original coupling.
+
+We say a coupling $(\\mathbf x_0, \\boldsymbol \\epsilon)$ is **rectifiable** if the PF-ODE induced from the diffusion process $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon$ admits a unique solution.
+
+
+## Preliminary: PF-ODE for General Diffusion Models
+
+For a general diffusion model form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $, where $\\mathbf x_0$ is the data and $\\boldsymbol \\epsilon \\sim \\mathcal N (\\boldsymbol 0, \\mathbf I)$ is the Gaussian noise. From [1], we have the $\\frac{\\alpha_t}{\\sigma_t}$ is a strictly monotonically decreasing function. From [1], we know for any $0 \\le s \\le t \\le 1 $
+$$
+\\mathbb P(\\boldsymbol x_t \\mid \\mathbf x_s) = \\mathcal N (\\alpha_{t\\mid s} \\mathbf x_s , \\sigma^2_{t\\mid s} \\mathbf I),
+$$
+where $\\alpha_{t\\mid s} = \\frac{\\alpha_t}{\\alpha_s}$ and $\\sigma_{t\\mid s}^2 =  \\sigma_t^2 - \\frac{\\alpha_t^2}{\\alpha_s^2}\\sigma_s^2 $.
+
+This equivalent to the following stochastic process,
+$$
+\\mathbf x_t = \\frac{\\alpha_t}{\\alpha_s}\\mathbf x_s + \\sqrt{\\sigma_t^2 - \\frac{\\alpha_t^2}{\\alpha_s^2}\\sigma_s^2} \\boldsymbol \\epsilon \\, .
+$$
+Let  $s=t-\\Delta t$, we have
+$$
+\\mathbf x_{t} = \\frac{\\alpha_{t}}{\\alpha_{t-\\Delta t}}\\mathbf x_{t-\\Delta t} + \\sqrt{\\sigma_{t}^2 - \\frac{\\alpha_{t}^2}{\\alpha_{t-\\Delta t}^2}\\sigma_{t-\\Delta t}^2} \\boldsymbol \\epsilon \\, .
+$$
+Then we have
+$$
+\\begin{aligned}
+\\mathbf x_{t}-\\mathbf x_{t-\\Delta t}
+& = \\frac{\\alpha_{t}-\\alpha_{t-\\Delta t}}{\\alpha_{t-\\Delta t}}\\mathbf x_{t-\\Delta t} + \\sqrt{\\sigma_{t}^2 - \\frac{\\alpha_{t}^2}{\\alpha_{t-\\Delta t}^2}\\sigma_{t-\\Delta t}^2} \\boldsymbol{\\epsilon} \\\\
+& = \\frac{\\alpha_{t} - \\alpha_{t-\\Delta t}}{\\alpha_{t-\\Delta t}} \\mathbf{x}_{t-\\Delta t} + \\sqrt{\\frac{\\sigma_{t}^2 \\alpha_{t-\\Delta t}^2 - \\alpha_{t}^2 \\sigma_{t-\\Delta t}^2}{\\alpha_{t-\\Delta t}^2} \\sigma_{t-\\Delta t}^2} \\boldsymbol{\\epsilon} \\\\
+& = \\frac{\\alpha_{t} - \\alpha_{t-\\Delta t}}{\\alpha_{t-\\Delta t}} \\mathbf{x}_{t-\\Delta t} + \\sqrt{\\frac{\\sigma_{t}^2 \\alpha_{t-\\Delta t}^2 - \\alpha_{t}^2 \\sigma_{t-\\Delta t}^2}{\\alpha_{t-\\Delta t}^2}} \\boldsymbol{\\epsilon} \\\\
+& = \\frac{\\alpha_{t} - \\alpha_{t-\\Delta t}}{\\alpha_{t}} \\mathbf{x}_{t} + \\sqrt{\\frac{\\sigma_{t}^2 \\alpha_{t-\\Delta t}^2 - \\alpha_{t}^2 \\sigma_{t-\\Delta t}^2}{\\alpha_{t-\\Delta t}^2}} \\boldsymbol{\\epsilon} \\\\
+& = \\frac{\\alpha_{t} - \\alpha_{t-\\Delta t}}{\\alpha_{t}} \\mathbf{x}_{t} + \\alpha_t \\cdot \\sqrt{\\frac{\\sigma_t^2}{\\alpha_t^2} - \\frac{\\sigma_{t-\\Delta t}^2}{\\alpha_{t-\\Delta t}^2}} \\boldsymbol{\\epsilon}\\\\
+& = \\frac{\\alpha_t - \\alpha_{t-\\Delta t}}{\\Delta t}\\cdot \\frac{1}{\\alpha_t} \\mathbf x_t \\Delta t + \\alpha_t \\cdot \\sqrt{\\frac{\\frac{\\sigma_t^2}{\\alpha_t^2} - \\frac{\\sigma_{t-\\Delta t}^2}{\\alpha_{t-\\Delta t}^2}}{\\Delta t}}\\cdot \\sqrt{\\Delta t} \\boldsymbol{\\epsilon}
+\\end{aligned}
+$$
+Therefore, we have
+$$
+\\mathrm d \\mathbf x_t = \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\mathbf x_t \\mathrm d t + \\alpha_t \\cdot \\sqrt{\\frac{\\mathrm d \\left(\\frac{\\sigma^2_t}{\\alpha_t^2}\\right)}{\\mathrm d t}} \\mathrm d w
+$$
+Considering that
+$$
+\\frac{d}{dt}\\left(\\frac{\\sigma_t^2}{\\alpha_t^2}\\right) = \\frac{2\\sigma_t (\\dot{\\sigma}_t \\alpha_t - \\sigma_t \\dot{\\alpha}_t)}{\\alpha_t^3}\\, ,
+$$
+we have
+$$
+\\begin{aligned}
+\\mathrm d \\mathbf x_t & =  \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\mathbf x_t \\mathrm d t + \\alpha_t \\cdot \\sqrt{\\frac{2\\sigma_t (\\dot{\\sigma}_t \\alpha_t - \\sigma_t \\dot{\\alpha}_t)}{\\alpha_t^3}} \\mathrm d w \\\\
+& = \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\mathbf x_t \\mathrm d t +  \\sqrt{2 \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right)} \\mathrm d w \\, .
+\\end{aligned}
+$$
+This shows that for the general diffusion form, the corresponding drift term $f(\\mathbf x_t, t)$ and diffusion term $g(t)$ in the stochastic process are
+$$
+f(\\mathbf x_t, t) = \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\mathbf x_t ,\\quad g(t) = \\sqrt{2 \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right)} .
+$$
+Substitute the two terms into the PF-ODE equation as indicated by [2], we have
+$$
+\\mathrm d \\mathbf x_t = \\left[\\frac{\\dot{\\alpha}_t}{\\alpha_t}\\mathbf x_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) \\sigma_t^2\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t) \\right] \\mathrm d t
+$$
+
+## Equivalence Results Under Rescaling
+
+We now establish that rescaling transformations of the form $\\mathbf y_t = k(t)\\,\\mathbf x_t$ (with $k(0) = 1$ and $k(t) \\neq 0$) preserve the essential structure of the diffusion model. This is the key insight that allows us to transfer results from the linear interpolation form to arbitrary diffusion forms.
+
+
+### Theorem 1 (Posterior Invariance)
+
+For a general diffusion form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $, where $\\mathbf x_0$ is the data and $\\boldsymbol \\epsilon \\sim \\mathcal N (\\boldsymbol 0, \\mathbf I)$ is the Gaussian noise. From [1], we have the $\\frac{\\alpha_t}{\\sigma_t}$ is a strictly monotonically decreasing function. We show that for arbitrary transformation $\\mathbf y_t = k(t)\\mathbf x_t $  satisfying $\\mathbf y_0 = \\mathbf x_0$ and $k(t) \\not= 0$, we always have
+$$
+\\mathbb P (\\mathbf y_0 \\mid \\mathbf y_t) = \\mathbb P(\\mathbf x_0 \\mid \\mathbf x_t)
+$$
+Proof:
+
+Assuming $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $, from $\\mathbf y_t = k(t) \\mathbf x_t$, we have
+$$
+\\mathbf y_t = k(t) \\alpha_t \\mathbf x_0 + k(t) \\sigma_t \\boldsymbol \\epsilon \\, ,
+$$
+which is equivalent to
+$$
+\\mathbf y_t \\sim \\mathcal N (k(t)\\alpha_t \\mathbf x_0, (k(t)\\sigma_t)^2)\\, .
+$$
+Therefore, we have
+$$
+\\begin{aligned}
+\\mathbb P(\\mathbf y_t \\mid \\mathbf y_0)
+ & =    \\frac{1}{(2\\pi \\sigma^2_t k(t)^2)^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t k(t)^2} \\|\\mathbf{y}_t -k(t)\\alpha_t \\mathbf{x}_0\\|^2\\right) \\\\
+ & =  \\frac{1}{(2\\pi \\sigma^2_t k(t)^2)^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t k(t)^2} \\|k(t)\\mathbf{x}_t -k(t)\\alpha_t \\mathbf{x}_0\\|^2\\right) \\\\
+ & =  \\frac{1}{(2\\pi \\sigma^2_t k(t)^2)^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)
+\\end{aligned}
+$$
+Additionally, we have
+$$
+\\begin{aligned}
+\\mathbb P (\\mathbf y_0 \\mid \\mathbf y_t ) & =    \\mathbb P(\\mathbf y_0) \\cdot \\frac{\\mathbb P(\\mathbf y_0 \\mid \\mathbf y_t)}{\\mathbb P(\\mathbf y_0)} \\\\
+ & =   \\mathbb P(\\mathbf y_0 ) \\cdot \\frac{\\mathbb P(\\mathbf y_t \\mid \\mathbf y_0)}{\\mathbb P(\\mathbf y_t)} \\\\
+ & =  \\mathbb E_{\\mathbb P(\\mathbf y_0)} \\left[\\frac{\\mathbb P(\\mathbf y_t \\mid \\mathbf y_0)}{\\mathbb E_{\\mathbb P(\\mathbf y_0)}\\left[\\mathbb P(\\mathbf y_t \\mid \\mathbf y_0 )\\right]}\\right] \\\\
+ & =  \\mathbb E_{\\mathbb P(\\mathbf y_0)} \\left[\\frac{\\frac{1}{(2\\pi \\sigma^2_t k(t)^2)^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)}{\\mathbb E_{\\mathbb P(\\mathbf y_0)}\\left[\\frac{1}{(2\\pi \\sigma^2_t k(t)^2)^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)\\right]}\\right] \\\\
+ & =  \\mathbb E_{\\mathbb P(\\mathbf y_0)} \\left[\\frac{\\frac{1}{(2\\pi \\sigma^2_t )^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)}{\\mathbb E_{\\mathbb P(\\mathbf y_0)}\\left[\\frac{1}{(2\\pi \\sigma^2_t )^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)\\right]}\\right] \\\\
+ & =  \\mathbb E_{\\mathbb P(\\mathbf x_0)} \\left[\\frac{\\frac{1}{(2\\pi \\sigma^2_t )^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)}{\\mathbb E_{\\mathbb P(\\mathbf x_0)}\\left[\\frac{1}{(2\\pi \\sigma^2_t )^{\\frac{d}{2}}} \\exp\\left(-\\frac{1}{2\\sigma^2_t} \\|\\mathbf{x}_t -\\alpha_t \\mathbf{x}_0\\|^2\\right)\\right]}\\right]  \\\\
+ & =   \\mathbb E_{\\mathbb P(\\mathbf x_0)} \\left[\\frac{\\mathbb P(\\mathbf x_t \\mid \\mathbf x_0)}{\\mathbb E_{\\mathbb P(\\mathbf x_0)}\\left[\\mathbb P(\\mathbf x_t \\mid \\mathbf x_0 )\\right]}\\right] \\\\
+ & =  \\mathbb P(\\mathbf x_0 ) \\cdot \\frac{\\mathbb P(\\mathbf x_t \\mid \\mathbf x_0)}{\\mathbb P(\\mathbf x_t)} \\\\
+ & =  \\mathbb P(\\mathbf x_0 \\mid \\mathbf x_t )
+\\end{aligned}
+$$
+
+
+### Theorem 2 (Score Function Scaling)
+
+For a general diffusion form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $, where $\\mathbf x_0$ is the data and $\\boldsymbol \\epsilon \\sim \\mathcal N (\\boldsymbol 0, \\mathbf I)$ is the Gaussian noise. From [1], we have the $\\frac{\\alpha_t}{\\sigma_t}$ is a strictly monotonically decreasing function. We show that for arbitrary transformation $\\mathbf y_t = k(t)\\mathbf x_t $  satisfying $\\mathbf y_0 = \\mathbf x_0$ and $k(t) \\not= 0$, we always have
+$$
+\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) = \\frac{1}{k(t)} \\cdot \\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t)
+$$
+
+
+According to Tweedie's formula, we have
+$$
+\\begin{aligned}
+\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t \\mid \\mathbf y_0)   & =    -\\frac{\\mathbf y_t - k(t)\\alpha_t \\mathbf y_0}{\\sigma_t^2 k (t)^2} \\\\
+ & =  - \\frac{\\mathbf x_t - \\alpha_t \\mathbf x_0}{\\sigma_t^2 k(t)} \\\\  & =   \\frac{1}{k(t)} \\cdot \\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t \\mid \\mathbf x_0)
+\\end{aligned}
+$$
+According to $\\mathbb P (\\mathbf y_0 \\mid \\mathbf y_t) = \\mathbb P(\\mathbf x_0 \\mid \\mathbf x_t)$ (Theorem 1), we have
+$$
+\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) = \\mathbb E_{\\mathbb P(\\mathbf y_0\\mid \\mathbf y_t)}\\left[\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t \\mid \\mathbf y_0)\\right] = \\mathbb E_{\\mathbb P(\\mathbf x_0\\mid \\mathbf x_t)}\\left[\\frac{1}{k(t)}\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t \\mid \\mathbf x_0)\\right]\\, .
+$$
+
+
+### Theorem 3 (PF-ODE Equivalence)
+
+For a general diffusion form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $, where $\\mathbf x_0$ is the data and $\\boldsymbol \\epsilon \\sim \\mathcal N (\\boldsymbol 0, \\mathbf I)$ is the Gaussian noise. From [1], we have the $\\frac{\\alpha_t}{\\sigma_t}$ is a strictly monotonically decreasing function. We show that for arbitrary transformation $\\mathbf y_t = k(t)\\mathbf x_t $  satisfying $\\mathbf y_0 = \\mathbf x_0$ and $k(t) \\not= 0$, the transformation  will not influence the data generated with PF-ODE starting from the same noise.
+
+For the above defined $\\mathbf y_t = k(t) \\alpha_t \\mathbf y_0  + k(t) \\sigma_t \\boldsymbol \\epsilon $ and $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon$,
+
+We have their corresponding PF-ODE are
+$$
+\\mathrm d \\mathbf x_t = \\left[\\frac{\\dot{\\alpha}_t}{\\alpha_t}\\mathbf x_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) \\sigma_t^2\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t) \\right] \\mathrm d t
+$$
+
+$$
+\\mathrm d \\mathbf y_t = \\left[\\frac{\\dot{\\alpha}_t k(t) + \\dot{k}(t) \\alpha_t }{\\alpha_t k (t)}\\mathbf y_t - \\left(\\frac{\\dot{\\sigma}_t k(t) + \\dot{k}(t) \\sigma_t }{\\sigma_t k(t)} - \\frac{\\dot{\\alpha}_t k(t) + \\dot{k}(t) \\alpha_t}{\\alpha_t k(t)}\\right) k^2(t)\\sigma_t^2\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) \\right] \\mathrm d t
+$$
+
+We can further simplify the above equation
+
+
+$$
+\\mathrm d \\mathbf y_t = \\left[\\frac{\\dot{\\alpha}_t k(t) + \\dot{k}(t) \\alpha_t }{\\alpha_t k (t)}\\mathbf y_t - \\left(\\frac{\\dot{\\sigma}_t k(t) + \\dot{k}(t) \\sigma_t }{\\sigma_t k(t)} - \\frac{\\dot{\\alpha}_t k(t) + \\dot{k}(t) \\alpha_t}{\\alpha_t k(t)}\\right) k^2(t)\\sigma_t^2\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) \\right] \\mathrm d t
+$$
+
+$$
+\\mathrm d \\mathbf y_t = \\left[\\left(\\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)}\\right)\\mathbf y_t - \\left(\\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} + \\frac{\\dot{k}(t)}{k(t)}\\right) - \\left(\\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)}\\right)\\right) k^2(t)\\sigma_t^2\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) \\right] \\mathrm d t
+$$
+
+$$
+\\mathrm d \\mathbf y_t = \\left[\\left(\\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)}\\right)\\mathbf y_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) k^2(t)\\sigma_t^2\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) \\right] \\mathrm d t
+$$
+
+
+To show that, after the transformation of $k(t)$, they will eventually induce the same noise and data pairs, we need to show that if $\\mathbf y_t = k(t) \\mathbf x_t$ , then $\\mathbf y_{t- \\Delta t} = k(t-\\Delta t)\\mathbf x_{t-\\Delta t}$ (mathematical induction), which is also equivalent to show that $\\mathrm d \\mathbf y_t = \\mathrm d k(t) \\mathbf x_t$ ($k(t)\\mathbf x_t$ and $\\mathbf y_t$ shares the same PF-ODE).
+
+> We further explain the relationship between $k(t) \\mathbf x_t$ and $\\mathbf y_t$ here to avoid confusion.
+>
+> $\\mathbf y_t$ is the PF-ODE of the diffusion form $\\mathbf y_t = k(t) \\alpha_t \\mathbf y_0 + k(t) \\sigma_t \\boldsymbol \\epsilon$
+>
+> $k(t)\\mathbf x_t$ can be interpreted as  we multiply $k(t)$ and $\\mathbf x_t$ where $\\mathbf x_t$ is points of PF-ODE of the diffusion form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $
+
+
+
+**A continuous proof:**
+
+Specifically,
+$$
+\\begin{aligned}
+\\mathrm d k(t) \\mathbf x_t
+& = k(t) \\mathrm d\\mathbf x_t + \\mathbf x_t \\dot{k}(t) \\mathrm dt \\\\
+ & =  k(t) \\left[\\frac{\\dot{\\alpha}_t}{\\alpha_t}\\mathbf x_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) \\sigma_t^2\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t) \\right] \\mathrm d t + \\mathbf x_t \\dot{k}(t) \\mathrm d t \\\\
+& = \\left[\\left(\\frac{\\dot{\\alpha}_t}{\\alpha_t} k(t)\\mathbf x_t  + \\dot{k}(t) \\mathbf x_t\\right) - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) \\sigma_t^2\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t) \\right] \\mathrm d t \\\\
+& =  \\left[\\left(\\frac{\\dot{\\alpha}_t}{\\alpha_t}   + \\frac{\\dot{k}(t)}{k(t)}\\right) \\mathbf x_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) \\sigma_t^2\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t) \\right] \\mathrm d t \\\\
+& = \\left[\\left(\\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)}\\right)\\mathbf y_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) k^2(t)\\sigma_t^2\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) \\right] \\mathrm d t
+\\end{aligned}
+$$
+
+**A discretized proof:**
+
+We aim to prove the relationship:
+
+$$
+\\mathbf{y}_{t-\\Delta t} = k(t-\\Delta t) \\mathbf{x}_{t-\\Delta t}
+$$
+
+where it is given that $\\mathbf{y}_t = k(t) \\mathbf{x}_t$, and the dynamics of $\\mathbf{x}_t$ and $\\mathbf{y}_t$ are defined by the differential equations:
+
+$$
+\\mathrm{d} \\mathbf{x}_t = \\left[ \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\mathbf{x}_t - \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) \\right] \\mathrm{d}t,
+$$
+
+$$
+\\mathrm{d} \\mathbf{y}_t = \\left[ \\left( \\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)} \\right) \\mathbf{y}_t - \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) k^2(t) \\sigma_t^2 \\nabla_{\\mathbf{y}_t} \\log \\mathbb{P}(\\mathbf{y}_t) \\right] \\mathrm{d}t.
+$$
+
+From the differential equation for $\\mathbf{x}_t$, we can discretize as:
+
+$$
+\\mathbf{x}_{t-\\Delta t} = \\mathbf{x}_t - \\Delta t \\cdot \\left[ \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\mathbf{x}_t - \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) \\right].
+$$
+
+This simplifies to:
+
+$$
+\\mathbf{x}_{t-\\Delta t} = \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) + \\Delta t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t).
+$$
+
+
+
+Assuming $k(t)$ is a smooth function, its discretization is:
+
+$$
+k(t-\\Delta t) = k(t) - \\Delta t \\cdot \\dot{k}(t).
+$$
+
+Multiply $k(t-\\Delta t)$ by $\\mathbf{x}_{t-\\Delta t}$ and we have:
+
+$$
+k(t-\\Delta t) \\mathbf{x}_{t-\\Delta t} = \\left[k(t) - \\Delta t \\cdot \\dot{k}(t)\\right] \\cdot \\left[\\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) + \\Delta t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) \\right].
+$$
+
+Then we expand the equation and have:
+
+$$
+\\begin{aligned}
+k(t-\\Delta t) \\mathbf{x}_{t-\\Delta t}
+& = k(t) \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) - \\Delta t \\cdot \\dot{k}(t) \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) + k(t) \\cdot \\Delta t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) -  k(t) \\cdot \\Delta^2 t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) \\\\
+& = k(t) \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) - \\Delta t \\cdot \\dot{k}(t) \\mathbf{x}_t - \\Delta^2 t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\cdot \\dot{k}(t) \\mathbf x_t + k(t) \\cdot \\Delta t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) -  k(t) \\cdot \\Delta^2 t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) \\\\
+& = k(t) \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) - \\Delta t \\cdot \\dot{k}(t) \\mathbf{x}_t  + k(t) \\cdot \\Delta t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) -  \\underbrace{k(t) \\cdot \\Delta^2 t \\cdot \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) - \\Delta^2 t \\cdot \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\cdot \\dot{k}(t) \\mathbf x_t}_{\\text{higher-order infinitesimal}} \\\\
+& \\approx  k(t) \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\left( \\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)} \\right) \\right) + \\Delta t \\cdot k(t) \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t).
+\\end{aligned}
+$$
+
+Using the differential equation for $\\mathbf{y}_t$, we discretize as:
+
+$$
+\\mathbf{y}_{t-\\Delta t} = \\mathbf{y}_t - \\Delta t \\cdot \\left[ \\left( \\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)} \\right) \\mathbf{y}_t - \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) k^2(t) \\sigma_t^2 \\nabla_{\\mathbf{y}_t} \\log \\mathbb{P}(\\mathbf{y}_t) \\right].
+$$
+
+Substitute $\\mathbf{y}_t = k(t) \\mathbf{x}_t$ and $\\nabla_{\\mathbf y_t} \\log \\mathbb P(\\mathbf y_t) = \\frac{1}{k(t)} \\cdot \\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t)$:
+
+$$
+\\mathbf{y}_{t-\\Delta t} = k(t) \\mathbf{x}_t - \\Delta t \\cdot \\left[ \\left( \\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)} \\right) k(t) \\mathbf{x}_t - \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) k(t) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t) \\right].
+$$
+
+Then we have:
+
+$$
+\\mathbf{y}_{t-\\Delta t} = k(t) \\mathbf{x}_t \\cdot \\left( 1 - \\Delta t \\cdot \\left( \\frac{\\dot{\\alpha}_t}{\\alpha_t} + \\frac{\\dot{k}(t)}{k(t)} \\right) \\right) + \\Delta t \\cdot k(t) \\left( \\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t} \\right) \\sigma_t^2 \\nabla_{\\mathbf{x}_t} \\log \\mathbb{P}(\\mathbf{x}_t).
+$$
+
+Therefore, we show that
+$$
+\\mathbf y_{t-\\Delta t} = k(t-\\Delta t)\\mathbf x(t-\\Delta t) \\quad (\\Delta t \\rightarrow 0)
+$$
+
+For the convenience of the following discussion, we can rephrase Theorem 3 for better understanding.
+
+The above mentioned PF-ODE can be written as follows:
+$$
+\\mathrm d \\mathbf x_t = \\boldsymbol v_t(\\mathbf x_t, t) \\mathrm d t, \\quad \\boldsymbol v_t(\\mathbf x_t, t) = \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\mathbf x_t - \\left(\\frac{\\dot{\\sigma}_t}{\\sigma_t} - \\frac{\\dot{\\alpha}_t}{\\alpha_t}\\right) \\sigma_t^2\\nabla_{\\mathbf x_t} \\log \\mathbb P(\\mathbf x_t)
+$$
+Similarly, we can also denote the PF-ODE of $\\mathbf y_t$ as follows:
+$$
+\\mathrm d \\mathbf y_t = \\boldsymbol u_t(\\mathbf y_t, t) \\mathrm d t
+$$
+
+
+Therefore,  denote $\\mathbf x_1 = \\sigma_1\\boldsymbol \\epsilon$, the denoising process following the PF-ODE of $\\mathbf x_t$ can be written as the following integral
+$$
+\\mathbf x_0 - \\mathbf x_1 = \\int_{1}^{0} \\boldsymbol v_t(\\mathbf x_t, t) \\mathrm d t, \\quad \\mathbf y_0 - \\mathbf y_1 = \\int_1^0 \\boldsymbol u_t(\\mathbf y_t,t) \\mathrm d t \\, ,
+$$
+
+
+Following Theorem 3, if $\\mathbf y_1 = k(1)\\mathbf x_1 = k(1)\\sigma_1\\boldsymbol \\epsilon$,  we will have $\\mathbf x_0 = \\mathbf y_0$.
+
+This is equivalent to the following equation
+$$
+\\mathbf x_0 - \\boldsymbol \\epsilon =  \\mathbf y_0 - \\boldsymbol \\epsilon  =  \\mathbf y_0 - \\frac{\\mathbf y_1}{\\sigma_1 k(1)}
+$$
+
+
+#### Applications: Transforming the General Diffusion Model Forms into Common Diffusion Model Forms
+
+Here, we show for common adopted diffusion forms, we can multiply simple $k(t)$ to transform the general diffusion model form into their specific forms.  For the discussion convenience, we denote the general diffusion model forms as $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $ and the target diffusion model forms as $\\mathbf x_t = \\alpha_t' \\mathbf x_0 + \\sigma_t' \\boldsymbol \\epsilon$.
+
+**For Variance Exploding form (VE),** the most important property is that it should satisfy $\\alpha_t' =1 $. To do so, we can simply set $k(t) = \\frac{1}{\\alpha_t}$. Therefore, we have $\\alpha_t' = 1$ and $\\sigma_t' = \\frac{\\sigma_t}{\\alpha_t} \\in [0, \\frac{\\sigma_1}{\\alpha_1}]$.
+
+
+
+**For Variance Preserving form (VP),** the most important property is that it should satisfy $(\\alpha_t')^2 + (\\sigma_t')^2 =1$. To do so, we can simply set $k(t)= \\frac{1}{\\sqrt{\\alpha_t^2 + \\sigma_t^2}}$. Therefore, we have $\\alpha_t' = \\frac{\\alpha_t}{\\sqrt{\\alpha_t^2 + \\sigma_t^2}} \\in [0,1]$ and $\\sigma_t' = \\frac{\\sigma_t}{\\sqrt{\\alpha_t^2 + \\sigma_t^2}} \\in [0,1]$.
+
+
+
+**For linear form as proposed by Flow Matching and Rectified Flow**, the most important property is that it should satisfy $\\alpha_t' + \\sigma_t' = 1$ . To do so, we can simply set $k(t) = \\frac{1}{\\alpha_t + \\sigma_t}$. Therefore, we have $\\alpha_t' = \\frac{\\alpha_t}{\\alpha_t + \\sigma_t} \\in [0,1]$ and $\\sigma_t' = \\frac{\\sigma_t}{\\alpha_t + \\sigma_t} \\in [0,1]$.
+
+This also allows us to build other diffusion forms, such as $k(t) = \\frac{1}{(\\sigma_t^n + \\alpha_t^n)^{1/n}}$, which can achieve the $(\\alpha_t')^n + (\\sigma_t')^n = 1$.
+
+
+## Reducing Convex Transport Costs
+
+### Theorem 4 (General Diffusion Models Can Reduce the Convex Transport Costs)
+
+>  Assume we have a target data distribution $\\pi_0$ and noise distribution $\\pi_1$, $\\mathbf z_0\\sim \\pi_0$ is the data sample from the target data distribution, and $\\boldsymbol \\epsilon_{\\mathbf z} \\sim \\pi_1$ is the white noise sample from Gaussian distribution. $\\mathbf x_0$ is generated through the PF-ODE of general form diffusion models $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon $ with the corresponding noise $\\boldsymbol \\epsilon $.  We aim to show for any convex function $c: \\mathbb R^{d} \\rightarrow \\mathbb R$, we always have
+>  $$\\mathbb E\\left[c(\\mathbf x_0 - \\boldsymbol \\epsilon)\\right] \\le \\mathbb E\\left[c(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z})\\right]$$
+
+To connect the general diffusion model forms with the linear form adopted in Flow Matching and Rectified Flow, we adopt $k(t) = \\frac{1}{\\alpha_t + \\sigma_t}$.  It is obvious that, we have $\\frac{\\sigma_1}{\\alpha_t + \\sigma_1} = \\frac{\\sigma_1}{0 + \\sigma_1}=1$. Therefore, we can denote $\\mathbf y_1 = \\boldsymbol \\epsilon$. We define $\\mathbf y_t$ on the trajectory induced by the PF-ODE of the transformed form, and define $\\mathbf z_t$ on the specific linear form interpolation of $\\mathbf z_0$ and $\\boldsymbol \\epsilon_{\\mathbf z}$ following the transformed form, i.e., $\\mathbf z_t = \\frac{\\alpha_t}{\\alpha_t + \\sigma_t} \\mathbf z_0 + \\frac{\\sigma_t}{\\alpha_t + \\sigma_t} \\boldsymbol \\epsilon_{\\mathbf z}$ .
+
+
+
+For the transformation, we have two basic properties: 1) $\\frac{\\sigma_t}{\\alpha_t + \\sigma_t} = 1-\\frac{\\alpha_t}{\\alpha_t + \\sigma_t}$. 2) $\\frac{\\alpha_t}{\\alpha_t + \\sigma_t}$ is a monotonically decreasing function due to $\\frac{\\alpha_t}{\\alpha_t + \\sigma_t} = \\frac{\\sqrt{SNR(t)}}{1 + \\sqrt{SNR(t)} }= 1-\\frac{1}{1+\\sqrt{SNR(t)}}$, where $SNR(t)$ is a monotonically decreasing function [1].
+
+Given Theorem 3, we have
+$$
+\\begin{aligned}
+\\mathbb E\\left[c(\\mathbf x_0 - \\boldsymbol \\epsilon)\\right]
+& = \\mathbb E\\left[c(\\mathbf y_0 - \\boldsymbol \\epsilon)\\right] \\\\
+& = \\mathbb E\\left[c(\\mathbf y_0 - \\mathbf y_1)\\right] \\\\
+& = \\mathbb E\\left[c\\left(\\int_0^1 \\mathbf u(\\mathbf y_t, t) \\mathrm d t\\right)\\right] \\\\
+& \\le \\mathbb E\\left[\\int_0^1 c\\left(\\mathbf u(\\mathbf y_t, t)\\right) \\mathrm d t\\right] \\\\
+& =  \\mathbb E\\left[\\int_0^1 c\\left(\\mathbf u(\\mathbf z_t, t)\\right) \\mathrm d t\\right] \\\\
+& = \\mathbb E\\left[\\int_0^1 c\\left(\\mathbb E\\left[\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z}\\mid \\mathbf z_t\\right]\\right) \\left(\\frac{\\alpha_t}{\\alpha_t + \\sigma_t}\\right)'\\mathrm d t\\right]
+\\end{aligned}
+$$
+Let $s_t = \\frac{\\alpha_t}{\\alpha_t + \\sigma_t}$, and $t_s$ is the reverse function of $s_t$, we have
+$$
+\\begin{aligned}
+\\mathbb E\\left[c(\\mathbf x_0 - \\boldsymbol \\epsilon)\\right]
+& = \\mathbb E\\left[c(\\mathbf y_0 - \\boldsymbol \\epsilon)\\right] \\\\
+& = \\mathbb E\\left[c(\\mathbf y_0 - \\mathbf y_1)\\right] \\\\
+& = \\mathbb E\\left[c\\left(\\int_0^1 \\mathbf u(\\mathbf y_t, t) \\mathrm d t\\right)\\right] \\\\
+& \\le \\mathbb E\\left[\\int_0^1 c\\left(\\mathbf u(\\mathbf y_t, t)\\right) \\mathrm d t\\right] \\\\
+& =  \\mathbb E\\left[\\int_0^1 c\\left(\\mathbf u(\\mathbf z_t, t)\\right) \\mathrm d t\\right] \\\\
+& = \\mathbb E\\left[\\int_0^1 c\\left(\\mathbb E\\left[\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z}\\mid \\mathbf z_{t_s}\\right]\\right) \\mathrm d s\\right] \\\\
+& \\le \\mathbb E\\left[\\int_0^1 \\mathbb E\\left[c\\left(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z}\\right)\\mid \\mathbf z_{t_s}\\right] \\mathrm d s\\right] \\\\
+& = \\int_0^1 \\mathbb E\\left[c\\left(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z}\\right)\\right] \\mathrm d s \\\\
+& = \\mathbb E\\left[c\\left(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z}\\right)\\right]
+\\end{aligned}
+$$
+
+
+Therefore, we show that general diffusion models can reduce the convex cost instead of being limited to the special linear form as proposed in previous work [3].
+
+
+## The Straightening Effect
+
+In this section, we generalize the characterization of straight couplings (Theorem 3.6 of [3]) and the convergence rate of recursive rectification (Theorem 3.7 of [3]) to the general diffusion form. The key idea is to leverage Theorem 3: since the $k(t)$ transformation does not change the data-noise pairing, we can always transform the general diffusion form into the linear form, apply the known results from [3], and transform back.
+
+
+### Definition (Straight Coupling for General Diffusion)
+
+A coupling $(\\mathbf x_0, \\boldsymbol \\epsilon)$ is said to be **straight** (or fully rectified) with respect to the general diffusion form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon$ if it is a fixed point of the rectification operator. That is, the PF-ODE of the diffusion model trained on $(\\mathbf x_0, \\boldsymbol \\epsilon)$, when started from $\\boldsymbol \\epsilon$, recovers $\\mathbf x_0$ exactly.
+
+### Definition (Straightness and Non-crossing Measures)
+
+For a coupling $(\\mathbf x_0, \\boldsymbol \\epsilon)$ with the corresponding PF-ODE flow $\\mathbf Z = \\{\\mathbf Z_t : t \\in [0, 1]\\}$, define the **straightness measure** and **non-crossing measure** through the transformed linear form. Specifically, let $k(t) = \\frac{1}{\\alpha_t + \\sigma_t}$ and $\\mathbf Y_t = k(t)\\mathbf Z_t$. Then:
+
+$$
+S_\\alpha(\\mathbf Z) := S(\\mathbf Y) = \\int_0^1 \\mathbb E\\left[\\left\\|(\\mathbf Y_0 - \\mathbf Y_1) - \\dot{\\mathbf Y}_t\\right\\|^2\\right] \\mathrm d t \\,,
+$$
+$$
+V_\\alpha((\\mathbf x_0, \\boldsymbol\\epsilon)) := V((\\mathbf Y_0, \\mathbf Y_1)) = \\int_0^1 \\mathbb E\\left[\\left\\|(\\mathbf x_0 - \\boldsymbol \\epsilon) - \\mathbb E[\\mathbf x_0 - \\boldsymbol \\epsilon \\mid \\mathbf z_{t}]\\right\\|^2\\right] \\mathrm d t \\,,
+$$
+
+where $\\mathbf z_t = \\frac{\\alpha_t}{\\alpha_t + \\sigma_t}\\mathbf x_0 + \\frac{\\sigma_t}{\\alpha_t + \\sigma_t}\\boldsymbol \\epsilon$ is the transformed linear interpolation and $S(\\cdot)$, $V(\\cdot)$ are the straightness and non-crossing measures defined in [3] for the linear form.
+
+Note that by Theorem 3, $S_\\alpha(\\mathbf Z) = 0$ iff the transformed flow $\\mathbf Y$ has perfectly straight paths, which (by Theorem 3 again) is equivalent to the original PF-ODE generating the same data-noise pairs.
+
+
+### Theorem 5 (Characterization of Straight Couplings — Analog of [3] Theorem 3.6)
+
+> Assume $(\\mathbf x_0, \\boldsymbol \\epsilon)$ is rectifiable under the general diffusion form $\\mathbf x_t = \\alpha_t \\mathbf x_0 + \\sigma_t \\boldsymbol \\epsilon$. Let $(\\mathbf z_0, \\boldsymbol \\epsilon_{\\mathbf z})$ be the rectified coupling. Then $(\\mathbf x_0, \\boldsymbol \\epsilon)$ is a straight coupling if and only if the following equivalent statements hold:
+>
+> 1. **Transport cost equality:** There exists a strictly convex function $c: \\mathbb R^d \\to \\mathbb R$ such that $\\mathbb E[c(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z})] = \\mathbb E[c(\\mathbf x_0 - \\boldsymbol \\epsilon)]$.
+> 2. **Fixed point:** $(\\mathbf x_0, \\boldsymbol \\epsilon)$ is a fixed point of Rectify, i.e., $(\\mathbf z_0, \\boldsymbol \\epsilon_{\\mathbf z}) = (\\mathbf x_0, \\boldsymbol \\epsilon)$.
+> 3. **Non-crossing:** The transformed linear interpolation paths do not intersect: $V_\\alpha((\\mathbf x_0, \\boldsymbol \\epsilon)) = 0$.
+
+Proof:
+
+By Theorem 3, the rectification of the general diffusion form produces exactly the same data-noise pairs as the rectification of the transformed linear form under $k(t) = \\frac{1}{\\alpha_t + \\sigma_t}$. Specifically:
+
+- Let $\\mathbf Y_t$ be the PF-ODE flow in the transformed linear form. Then $\\mathbf Y_0 = \\mathbf x_0$ and $\\mathbf Y_1 = \\boldsymbol \\epsilon$ (Theorem 3).
+- The rectified coupling in the general form $(\\mathbf z_0, \\boldsymbol \\epsilon_{\\mathbf z})$ satisfies $\\mathbf z_0 = \\mathbf Y_0'$ where $\\mathbf Y'$ is the PF-ODE flow in the transformed linear form starting from $\\boldsymbol \\epsilon_{\\mathbf z}$.
+
+Therefore, the three conditions above are respectively equivalent to the three conditions in Theorem 3.6 of [3] applied to the transformed linear interpolation $\\tilde{\\mathbf x}_t = s_t \\mathbf x_0 + (1 - s_t) \\boldsymbol \\epsilon$ where $s_t = \\frac{\\alpha_t}{\\alpha_t + \\sigma_t}$.
+
+We now verify the equivalence chain:
+
+$(3 \\Rightarrow 2 \\Rightarrow 1)$: Obvious. If the coupling is a fixed point (Statement 2), then for any $c$ we have $\\mathbb E[c(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z})] = \\mathbb E[c(\\mathbf x_0 - \\boldsymbol \\epsilon)]$ (Statement 1). Statement 3 implies Statement 2 because when $V_\\alpha = 0$, the transformed linear interpolation paths do not intersect, so by [3, Theorem 3.6, $4 \\Rightarrow 3 \\Rightarrow 2$], the rectified flow in the transformed space coincides with the linear interpolation, hence $(\\mathbf z_0, \\boldsymbol \\epsilon_{\\mathbf z}) = (\\mathbf x_0, \\boldsymbol \\epsilon)$.
+
+$(1 \\Rightarrow 3)$: If $\\mathbb E[c(\\mathbf z_0 - \\boldsymbol \\epsilon_{\\mathbf z})] = \\mathbb E[c(\\mathbf x_0 - \\boldsymbol \\epsilon)]$, then the two applications of Jensen's inequality in the proof of Theorem 4 are both tight. Since $c$ is strictly convex, the second Jensen's inequality being tight implies $\\mathbf x_0 - \\boldsymbol \\epsilon = \\mathbb E[\\mathbf x_0 - \\boldsymbol \\epsilon \\mid \\mathbf z_t]$ almost surely for $t \\sim \\text{Uniform}([0,1])$, which means the lines passing through each $\\mathbf z_t$ are unique, i.e., $V_\\alpha((\\mathbf x_0, \\boldsymbol \\epsilon)) = 0$. $\\blacksquare$
+
+
+
+### Theorem 6 ($O(1/K)$ Convergence of Recursive Rectification — Analog of [3] Theorem 3.7)
+
+> Let $\\mathbf Z^k$ be the $k$-th rectified flow of $(\\mathbf x_0, \\boldsymbol \\epsilon)$ under the general diffusion form, i.e., $\\mathbf Z^{k+1} = \\text{RectFlow}((\\mathbf Z_0^k, \\mathbf Z_1^k))$ with $(\\mathbf Z_0^0, \\mathbf Z_1^0) = (\\mathbf x_0, \\boldsymbol \\epsilon)$. Assume each $(\\mathbf Z_0^k, \\mathbf Z_1^k)$ is rectifiable for $k = 0, \\ldots, K$. Then
+> $$\\sum_{k=0}^K \\left[S_\\alpha(\\mathbf Z^{k+1}) + V_\\alpha((\\mathbf Z_0^k, \\mathbf Z_1^k))\\right] \\le \\mathbb E\\!\\left[\\|\\mathbf x_0 - \\boldsymbol \\epsilon\\|^2\\right] \\,.$$
+> In particular, if $\\mathbb E[\\|\\mathbf x_0 - \\boldsymbol \\epsilon\\|^2] < \\infty$, then
+> $$\\min_{k \\le K}\\left(S_\\alpha(\\mathbf Z^k) + V_\\alpha((\\mathbf Z_0^k, \\mathbf Z_1^k))\\right) = O(1/K) \\,.$$
+
+Proof:
+
+By Theorem 3, the rectification of the general form produces the same data-noise pairs as the rectification of the transformed linear form. Therefore, $S_\\alpha(\\mathbf Z^k)$ and $V_\\alpha((\\mathbf Z_0^k, \\mathbf Z_1^k))$ are exactly the straightness and non-crossing measures of the corresponding $k$-th rectified flow in the transformed linear form.
+
+Taking $c(\\mathbf x) = \\|\\mathbf x\\|^2$ in Theorem 4, we obtain
+$$
+\\mathbb E\\!\\left[\\|\\mathbf Z_0^k - \\mathbf Z_1^k\\|^2\\right] - \\mathbb E\\!\\left[\\|\\mathbf Z_0^{k+1} - \\mathbf Z_1^{k+1}\\|^2\\right] = S_\\alpha(\\mathbf Z^{k+1}) + V_\\alpha((\\mathbf Z_0^k, \\mathbf Z_1^k)) \\,,
+$$
+which is exactly the identity (13) from [3] applied to the transformed linear form. (Here we used the fact that for the quadratic cost, the inequality in Theorem 4 becomes an exact decomposition, as shown in [3].)
+
+Performing a telescoping sum over $k = 0, \\ldots, K$:
+$$
+\\sum_{k=0}^K \\left[S_\\alpha(\\mathbf Z^{k+1}) + V_\\alpha((\\mathbf Z_0^k, \\mathbf Z_1^k))\\right] = \\mathbb E\\!\\left[\\|\\mathbf Z_0^0 - \\mathbf Z_1^0\\|^2\\right] - \\mathbb E\\!\\left[\\|\\mathbf Z_0^{K+1} - \\mathbf Z_1^{K+1}\\|^2\\right] \\le \\mathbb E\\!\\left[\\|\\mathbf x_0 - \\boldsymbol \\epsilon\\|^2\\right] \\,.
+$$
+
+Since the sum of $K+1$ non-negative terms is bounded by $\\mathbb E[\\|\\mathbf x_0 - \\boldsymbol \\epsilon\\|^2]$, the minimum term is at most $\\frac{\\mathbb E[\\|\\mathbf x_0 - \\boldsymbol \\epsilon\\|^2]}{K+1} = O(1/K)$. $\\blacksquare$
+
+**Remark.** Theorem 6 shows that the convergence rate of recursive rectification for general diffusion models matches that of Rectified Flow. This is a direct consequence of Theorem 3, which establishes that the choice of diffusion schedule (i.e., $\\alpha_t, \\sigma_t$) does not affect the data-noise pairing induced by the PF-ODE. The diffusion schedule only affects the *path* taken from noise to data, not the *endpoint mapping*.
+
+
+## References
+
+[1] Variational Diffusion Models
+
+[2] Score-Based Generative Modeling through Stochastic Differential Equations
+
+[3] Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow
+`;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        let src = markdownSource;
+        const mathBlocks = [];
+
+        // Protect display math $$...$$ from markdown-it (which breaks _ and * in math)
+        src = src.replace(/\$\$([\s\S]*?)\$\$/g, function(match) {
+            const idx = mathBlocks.length;
+            mathBlocks.push(match);
+            return 'MATHBLOCK' + idx + 'ENDMATH';
+        });
+
+        // Protect inline math $...$
+        src = src.replace(/\$([^\n$]+?)\$/g, function(match) {
+            const idx = mathBlocks.length;
+            mathBlocks.push(match);
+            return 'MATHBLOCK' + idx + 'ENDMATH';
+        });
+
+        // Render markdown
+        const md = window.markdownit({
+            html: true,
+            typographer: true,
+        });
+        let html = md.render(src);
+
+        // Restore math blocks
+        html = html.replace(/MATHBLOCK(\d+)ENDMATH/g, function(_, idx) {
+            return mathBlocks[parseInt(idx)];
+        });
+
+        document.getElementById('blog-content').innerHTML = html;
+
+        // Render math with KaTeX
+        renderMathInElement(document.getElementById('blog-content'), {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+            ],
+            throwOnError: false,
+            trust: true,
+        });
+    });
+    </script>
+</body>
+</html>
+

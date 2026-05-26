@@ -1,0 +1,34 @@
+# Rendered media
+media/
+gallery/patterns/media/
+gallery/screenshots/
+
+# Output
+output/*/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+*.log
+
+# Local Claude Code settings
+.claude/
+
+# Editor backups
+*.bak
+*.swp
+*~

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On the Equivalence of Consistency Models and MeanFlow — Fu-Yun Wang</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --text-primary: #1e1b4b;
+            --text-secondary: #64748b;
+            --bg-page: #f8f7f4;
+            --bg-card: #ffffff;
+            --border-color: #e8e6df;
+            --shadow-md: 0 4px 12px rgba(30, 27, 75, 0.06);
+            --shadow-lg: 0 8px 24px rgba(30, 27, 75, 0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f8f7f4 0%, #eef2ff 50%, #faf5ff 100%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+        .blog-header {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .blog-header .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .blog-header .back-link:hover { text-decoration: underline; }
+        .blog-header h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.2rem;
+            line-height: 1.3;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        .blog-meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .blog-meta a { color: var(--primary-color); text-decoration: none; }
+        .blog-meta a:hover { text-decoration: underline; }
+        .blog-content {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 48px 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+        .blog-content h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.6rem;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .blog-content h2:first-child { margin-top: 0; }
+        .blog-content h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 36px;
+            margin-bottom: 12px;
+            color: var(--primary-dark);
+        }
+        .blog-content h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-top: 28px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        .blog-content p { margin-bottom: 14px; }
+        .blog-content ul, .blog-content ol {
+            margin-bottom: 14px;
+            padding-left: 24px;
+        }
+        .blog-content li { margin-bottom: 6px; }
+        .blog-content strong { font-weight: 600; }
+        .blog-content blockquote {
+            background: linear-gradient(135deg, #eef2ff, #faf5ff);
+            border-left: 4px solid var(--primary-color);
+            padding: 16px 20px;
+            margin: 20px 0;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
+        }
+        .blog-content blockquote p { margin-bottom: 8px; }
+        .blog-content blockquote p:last-child { margin-bottom: 0; }
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 0;
+            margin: 16px 0;
+        }
+        .katex-display > .katex { max-width: 100%; }
+        .katex { font-size: 1.05em; }
+        .blog-content h2:last-of-type ~ p {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+        }
+        @media (max-width: 640px) {
+            .container { padding: 24px 16px 60px; }
+            .blog-content { padding: 28px 20px; }
+            .blog-header h1 { font-size: 1.6rem; }
+            .katex-display { font-size: 0.85em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="blog-header">
+            <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to homepage</a>
+            <h1>On the Equivalence of Consistency Models and MeanFlow</h1>
+            <div class="blog-meta">
+                <a href="../index.html">Fu-Yun Wang</a> &middot; 2025
+            </div>
+        </div>
+        <div class="blog-content" id="blog-content">
+            Loading...
+        </div>
+    </div>
+
+    <script>
+    const markdownSource = `
+## Background
+
+In a previous note on trajectory distillation of diffusion models, I discussed how a family of one-step generation methods can be derived from the PF-ODE of diffusion models. Among them, **Consistency Models (CMs)** and **MeanFlow** stand out as representative approaches that have been validated on standard benchmarks such as CIFAR and ImageNet.
+
+Intuitively, consistency models pursue a *consistent mapping from any point on the ODE trajectory to the same endpoint*, while MeanFlow emphasizes learning the *mean velocity field* averaged over the trajectory segment. Despite their different motivations, these two methods turn out to be closely related. In this note, I provide a derivation showing that the optimization objective of consistency models, in the continuous-time limit ($\\mathrm{d}t \\to 0$), reduces to that of MeanFlow.
+
+## Setup and Definitions
+
+### Consistency Model (CM)
+
+Consider a diffusion process with trajectory $\\mathbf{x}_t$ for $t \\in [0, 1]$, where $\\mathbf{x}_0$ is clean data and $\\mathbf{x}_1$ is noise. A consistency model aims to learn a mapping from any point $\\mathbf{x}_t$ on the ODE trajectory to the clean data $\\mathbf{x}_0$, such that this mapping is *consistent* across all time steps.
+
+Using the **linear interpolation** form ($\\mathbf{x}_t = (1 - t)\\mathbf{x}_0 + t\\boldsymbol{\\epsilon}$) with v-prediction, the consistency model predicts:
+
+$$
+\\mathbf{x}_0 = \\mathbf{x}_t - t \\cdot u_\\theta(\\mathbf{x}_t, t)
+$$
+
+Note that the consistency model always maps to $s = 0$ (the clean data endpoint).
+
+### Consistency Trajectory Model (CTM)
+
+The consistency trajectory model generalizes CM by allowing the target time $s$ to be any $s < t$, not just $s = 0$. Using the flow-matching form, CTM predicts:
+
+$$
+\\mathbf{x}_s = \\mathbf{x}_t - (t - s) \\cdot u_\\theta(\\mathbf{x}_t, t, s)
+$$
+
+Note that CTM reduces to CM when $s = 0$, i.e., $u(\\mathbf{x}_t, t) \\equiv u_\\theta(\\mathbf{x}_t, t, 0)$.
+
+
+## Derivation: From Consistency Model to MeanFlow ($s = 0$)
+
+### Consistency Objective
+
+The consistency model requires that mappings from neighboring time steps produce the same output:
+
+$$
+\\mathbf{x}_t - t \\cdot u(\\mathbf{x}_t, t) \\xrightarrow{\\text{fit}} \\mathbf{x}_{t+\\mathrm{d}t} - (t + \\mathrm{d}t) \\cdot u(\\mathbf{x}_{t+\\mathrm{d}t}, t + \\mathrm{d}t), \\quad \\mathrm{d}t < 0,\\; \\mathrm{d}t \\to 0
+$$
+
+### Difference Expansion
+
+Subtracting the two sides:
+
+$$
+\\mathrm{d}t \\cdot u(\\mathbf{x}_{t+\\mathrm{d}t}, t + \\mathrm{d}t) + t \\cdot \\left(u(\\mathbf{x}_{t+\\mathrm{d}t}, t + \\mathrm{d}t) - u(\\mathbf{x}_t, t)\\right) \\xrightarrow{\\text{fit}} \\mathbf{x}_{t+\\mathrm{d}t} - \\mathbf{x}_t
+$$
+
+As $\\mathrm{d}t \\to 0$, we apply a first-order Taylor expansion:
+
+$$
+u(\\mathbf{x}_{t+\\mathrm{d}t}, t + \\mathrm{d}t) \\approx u(\\mathbf{x}_t, t) + \\frac{\\mathrm{d}u}{\\mathrm{d}t}(\\mathbf{x}_t, t) \\cdot \\mathrm{d}t
+$$
+
+Substituting and dividing both sides by $\\mathrm{d}t$, we obtain:
+
+$$
+\\boxed{u(\\mathbf{x}_t, t) + t \\cdot \\frac{\\mathrm{d}u}{\\mathrm{d}t}(\\mathbf{x}_t, t) \\xrightarrow{\\text{fit}} v_t}
+$$
+
+where $v_t = \\frac{\\mathbf{x}_{t+\\mathrm{d}t} - \\mathbf{x}_t}{\\mathrm{d}t} = \\mathbb{E}[\\boldsymbol{\\epsilon} - \\mathbf{x}_0] \\approx \\boldsymbol{\\epsilon} - \\mathbf{x}_0$ is the instantaneous velocity.
+
+### The Detach Trick
+
+In practice, directly learning $\\frac{\\mathrm{d}u}{\\mathrm{d}t}$ through gradients can cause numerical instability. Therefore, one **detaches** this term from the computation graph, yielding the practical training objective:
+
+$$
+u(\\mathbf{x}_t, t) + \\text{detach}\\left(t \\cdot \\frac{\\mathrm{d}u}{\\mathrm{d}t}\\right) \\xrightarrow{\\text{fit}} v_t
+$$
+
+This is precisely the **MeanFlow** training objective.
+
+
+## General Case: From CTM to Generalized MeanFlow (Arbitrary $s$)
+
+The derivation above assumes $s = 0$ (standard CM). We now generalize to an arbitrary target time $s \\in [0, t)$, corresponding to the CTM formulation.
+
+### Setup
+
+The consistency condition for general $s$ reads:
+
+$$
+\\mathbf{x}_t - (t - s) \\cdot u(\\mathbf{x}_t, t, s) \\xrightarrow{\\text{fit}} \\mathbf{x}_{t+\\mathrm{d}t} - (t + \\mathrm{d}t - s) \\cdot u(\\mathbf{x}_{t+\\mathrm{d}t}, t + \\mathrm{d}t, s)
+$$
+
+### Derivation
+
+Taking the difference:
+
+$$
+\\mathrm{d}t \\cdot u(\\mathbf{x}_{t+\\mathrm{d}t}, t+\\mathrm{d}t, s) + (t - s)\\left(u(\\mathbf{x}_{t+\\mathrm{d}t}, t+\\mathrm{d}t, s) - u(\\mathbf{x}_t, t, s)\\right) \\xrightarrow{\\text{fit}} \\mathbf{x}_{t+\\mathrm{d}t} - \\mathbf{x}_t
+$$
+
+Applying the same first-order expansion and dividing by $\\mathrm{d}t$:
+
+$$
+\\boxed{u(\\mathbf{x}_t, t, s) + (t - s) \\cdot \\frac{\\mathrm{d}u}{\\mathrm{d}t}(\\mathbf{x}_t, t, s) \\xrightarrow{\\text{fit}} v_t}
+$$
+
+With the detach trick:
+
+$$
+u(\\mathbf{x}_t, t, s) + \\text{detach}\\left((t - s) \\cdot \\frac{\\mathrm{d}u}{\\mathrm{d}t}(\\mathbf{x}_t, t, s)\\right) \\xrightarrow{\\text{fit}} v_t
+$$
+
+> **Observation:** The factor $t$ in the $s=0$ case becomes $(t - s)$ in the general case. The standard MeanFlow objective is recovered as the special case $s = 0$. When $s > 0$, this gives a **generalized MeanFlow** objective where the mean velocity field maps to an intermediate point rather than the origin.
+
+> **Remark:** Setting $s = 0$ restricts us to single-step generation (predicting $\\mathbf{x}_0$ directly from $\\mathbf{x}_t$). The general formulation with arbitrary $s$ naturally supports **multi-step** generation: one can chain predictions $\\mathbf{x}_t \\to \\mathbf{x}_s \\to \\mathbf{x}_{s'} \\to \\cdots \\to \\mathbf{x}_0$ for a sequence $t > s > s' > \\cdots > 0$, potentially yielding higher-quality samples.
+
+
+## Experimental Validation: MeanFlow on Diffusion Policy
+
+To validate the practical effectiveness of MeanFlow beyond image generation, I reproduced MeanFlow on a **diffusion policy** task for robotic control (a simple simulation environment from a robotics course).
+
+### Baseline Results
+
+| Method | Steps | Success Rate |
+|--------|-------|-------------|
+| Flow Matching | 100 | ~85% |
+| Flow Matching | 1 | ~10-20% |
+| MeanFlow | 100 | ~85% |
+| MeanFlow | 1 | ~80% |
+| MeanFlow + CFG | 1 | ~86% |
+
+Key observations:
+- With 100-step sampling, MeanFlow matches flow matching performance (though it requires slightly longer training).
+- With **1-step** sampling, MeanFlow achieves ~80% success rate — a dramatic improvement over the ~10-20% of naive single-step flow matching, essentially random guessing.
+- Adding **classifier-free guidance (CFG)** further boosts 1-step MeanFlow to ~86%, matching 100-step flow matching.
+
+These results, obtained without any hyperparameter tuning, confirm that MeanFlow is a highly effective algorithm for one-step generation.
+
+### The Dependency on Small $t$ Training
+
+A natural question arises from the consistency model perspective: CMs have a well-known training dependency where the prediction at time $t$ relies on the quality of predictions at smaller $t$ values — the model at lower noise levels "teaches" the model at higher noise levels. **Does MeanFlow share this dependency?**
+
+To test this, I trained MeanFlow with $t$ fixed to $1$ only, without training on any smaller $t$ values. The result: the model's success rate was only 10-20%, equivalent to random guessing. **MeanFlow indeed requires stable training at smaller $t$ values to work.**
+
+### Why Does This Dependency Exist?
+
+At first glance, the MeanFlow objective $u(\\mathbf{x}_t, t) + \\text{detach}(t \\cdot \\frac{\\mathrm{d}u}{\\mathrm{d}t}) \\xrightarrow{\\text{fit}} v_t$ does not explicitly reference predictions at smaller time steps. So where does the dependency come from?
+
+The answer lies in the $\\frac{\\mathrm{d}u}{\\mathrm{d}t}$ term. This derivative is computed as:
+
+$$
+\\frac{\\mathrm{d}u}{\\mathrm{d}t} \\approx \\frac{u(\\mathbf{x}_t, t) - u(\\mathbf{x}_{t-\\delta}, t - \\delta)}{\\delta}
+$$
+
+If the model has not been trained on time steps smaller than $t$, then $u(\\mathbf{x}_{t-\\delta}, t-\\delta)$ produces meaningless outputs, rendering $\\frac{\\mathrm{d}u}{\\mathrm{d}t}$ uninformative. Without a meaningful derivative, the training signal degenerates and the model cannot learn.
+
+This also provides insight into why the **detach** operation is essential — and it may not be merely for optimization stability as commonly assumed. If $\\frac{\\mathrm{d}u}{\\mathrm{d}t}$ were not detached, the gradients would propagate through the model's predictions at neighboring time steps, creating complex dependencies that could destabilize training or force the model to learn a degenerate solution. The detach ensures that the derivative term serves purely as a *correction signal* computed from the current model state, maintaining the progressive training dynamics where small-$t$ predictions bootstrap larger-$t$ predictions.
+
+
+## Summary
+
+- The consistency model objective, in the continuous-time limit ($\\mathrm{d}t \\to 0$), is equivalent to the MeanFlow objective for $s = 0$.
+- For general target time $s$, the equivalence extends with the replacement $t \\to (t - s)$, yielding a generalized MeanFlow that supports multi-step generation.
+- Experimental results on diffusion policy for robotic control confirm MeanFlow's effectiveness: 1-step generation achieves performance comparable to 100-step flow matching.
+- MeanFlow inherits the hierarchical training dependency of consistency models — stable training at small $t$ is essential, mediated through the $\\frac{\\mathrm{d}u}{\\mathrm{d}t}$ term.
+- The necessity of detaching $\\frac{\\mathrm{d}u}{\\mathrm{d}t}$ may be fundamental to the algorithm's correctness rather than merely an optimization trick.
+
+
+## References
+
+[1] Song, Y., et al. Consistency Models. ICML, 2023.
+
+[2] Geng, Z., et al. Mean Flows for One-step Generative Modeling. 2025.
+
+[3] Lipman, Y., et al. Flow Matching for Generative Modeling. ICLR, 2023.
+
+[4] Chi, C., et al. Diffusion Policy: Visuomotor Policy Learning via Action Diffusion. RSS, 2023.
+`;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        let src = markdownSource;
+        const mathBlocks = [];
+
+        src = src.replace(/\$\$([\s\S]*?)\$\$/g, function(match) {
+            const idx = mathBlocks.length;
+            mathBlocks.push(match);
+            return 'MATHBLOCK' + idx + 'ENDMATH';
+        });
+
+        src = src.replace(/\$([^\n$]+?)\$/g, function(match) {
+            const idx = mathBlocks.length;
+            mathBlocks.push(match);
+            return 'MATHBLOCK' + idx + 'ENDMATH';
+        });
+
+        const md = window.markdownit({
+            html: true,
+            typographer: true,
+        });
+        let html = md.render(src);
+
+        html = html.replace(/MATHBLOCK(\d+)ENDMATH/g, function(_, idx) {
+            return mathBlocks[parseInt(idx)];
+        });
+
+        document.getElementById('blog-content').innerHTML = html;
+
+        renderMathInElement(document.getElementById('blog-content'), {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+            ],
+            throwOnError: false,
+            trust: true,
+        });
+    });
+    </script>
+</body>
+</html>
